@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Spelling Bee: 800 Word Edition</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* --- Main Game Card --- */
+        .game-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            text-align: center;
+            width: 450px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stats { display: flex; justify-content: space-around; margin-bottom: 20px; font-family: monospace; }
+        .high-score { color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.3); }
+
+        select, input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        select { background: #0f3460; color: white; border: 1px solid #4834d4; cursor: pointer; }
+        
+        #definition {
+            font-size: 0.95rem;
+            color: #bdc3c7;
+            margin: 20px 0;
+            min-height: 50px;
+            line-height: 1.5;
+        }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        button {
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit { background: #4834d4; color: white; grid-column: span 2; font-size: 1.1rem; }
+        .btn-hear { background: #00b894; color: white; }
+        .btn-hint { background: #e17055; color: white; }
+        .btn-start { background: #00b894; color: white; width: 100%; margin-top: 10px; }
+        button:hover { filter: brightness(1.2); transform: translateY(-2px); }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #dfe6e9;
+        }
+
+        .status-pill {
+            background: rgba(255,255,255,0.12);
+            padding: 8px 10px;
+            border-radius: 999px;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .overlay-panel {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 12, 24, 0.92);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 24px;
+            border-radius: 24px;
+            z-index: 5;
+        }
+
+        .overlay-panel h1, .overlay-panel h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .overlay-panel p, .overlay-panel li {
+            color: #dfe6e9;
+            line-height: 1.5;
+        }
+
+        .overlay-panel ul {
+            text-align: left;
+            margin: 10px 0 18px 0;
+            padding-left: 20px;
+        }
+
+        .game-card { position: relative; }
+
+            #admin-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            max-width: calc(100vw - 24px);
+            background: #000;
+            padding: 0;
+            border-radius: 12px;
+            border: 2px solid #00ff00;
+            z-index: 999;
+            box-shadow: 0 0 30px #00ff00;
+            overflow: hidden;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111;
+            padding: 0.55rem 0.8rem;
+            cursor: move;
+            border-bottom: 1px solid #00ff00;
+        }
+
+        .admin-title { color: #00ff00; font-family: 'Courier New', monospace; margin: 0; font-size: 0.9rem; }
+        .admin-toolbar { display: flex; gap: 6px; }
+        .admin-body { padding: 0.7rem 0.8rem 0.8rem; }
+        .admin-section { padding: 6px 0; border-bottom: 1px solid #222; }
+        .admin-btn { background: #00ff00; color: black; width: 100%; margin-top: 6px; font-family: 'Courier New', monospace; padding: 10px 12px; }
+        .admin-btn:hover { background: #fff; }
+        .admin-btn.small { width: auto; padding: 6px 10px; margin-top: 0; font-size: 0.8rem; }
+        .admin-close-btn { background: #333; color: #00ff00; }
+        .reveal-btn { background: #f1c40f; }
+        .admin-close { background: #333; color: #00ff00; margin-top: 20px; width: 100%; }
+        .admin-input { background:#111; color:#0f0; border:1px solid #0f0; font-family: monospace; font-size: 0.9rem; }
+        #account-btn {
+            display: block;
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 1000;
+            background: #00ff00;
+            color: black;
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0,255,0,0.3);
+        }
+        #account-btn:hover { background: #c8ff8b; }
+        #admin-toggle-btn {
+            display: none;
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 1000;
+            background: #00ff00;
+            color: black;
+            border-radius: 999px;
+            padding: 12px 16px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(0,255,0,0.3);
+        }
+        #admin-password-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            z-index: 1001;
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        #admin-password-box {
+            width: min(340px, 100%);
+            background: #111;
+            border: 2px solid #00ff00;
+            border-radius: 14px;
+            box-shadow: 0 0 24px rgba(0, 255, 0, 0.3);
+            padding: 18px 18px 14px;
+            position: relative;
+        }
+        #admin-password-box h3 {
+            margin: 0 0 10px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+        }
+        #admin-password-box p {
+            color: #9ae6b4;
+            margin: 0 0 16px;
+            font-size: 0.95rem;
+        }
+        #admin-password-box input {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border: 1px solid #0f0;
+            border-radius: 8px;
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            outline: none;
+        }
+        #admin-password-box .admin-password-close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: transparent;
+            border: none;
+            color: #0f0;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        #admin-password-box .admin-password-message {
+            color: #f3a712;
+            min-height: 22px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        #login-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            z-index: 1001;
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        #login-box {
+            width: min(360px, 100%);
+            background: #111;
+            border: 2px solid #00ff00;
+            border-radius: 14px;
+            box-shadow: 0 0 24px rgba(0, 255, 0, 0.3);
+            padding: 18px 18px 14px;
+            position: relative;
+        }
+        #login-box h3 {
+            margin: 0 0 10px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+        }
+        #login-box p {
+            color: #9ae6b4;
+            margin: 0 0 16px;
+            font-size: 0.95rem;
+        }
+        #login-box input {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border: 1px solid #0f0;
+            border-radius: 8px;
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            outline: none;
+        }
+        #login-box .admin-password-close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: transparent;
+            border: none;
+            color: #0f0;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        #login-box .admin-password-message {
+            color: #f3a712;
+            min-height: 22px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        #confetti-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1100;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            top: -10vh;
+            width: 10px;
+            height: 18px;
+            opacity: 0.9;
+            animation: confetti-fall linear forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 1; }
+            100% { transform: translate3d(var(--tx), 110vh, 0) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-card">
+    <div id="start-screen" class="overlay-panel">
+        <h1>Ultimate Spelling Bee</h1>
+        <p>Pick a level, then spell each word before time runs out.</p>
+        <ul>
+            <li>10 rounds per game</li>
+            <li>3 lives</li>
+            <li>15 seconds per word</li>
+            <li>Press Enter or tap Submit to answer</li>
+        </ul>
+        <button class="btn-start" onclick="startGame()">START GAME</button>
+        <button class="btn-start" style="background:#4b8bf5;" onclick="copyGameLink()">COPY GAME LINK</button>
+        <p id="share-message" style="margin-top:12px; color:#a8dadc; display:none; font-size:0.95rem;">Link copied! Share it with your friends.</p>
+        <p id="sign-in-info" style="margin-top:12px; color:#f0e68c; display:block; font-size:0.95rem;">Not signed in. Progress will not be saved unless you sign in.</p>
+    </div>
+
+    <div id="game-over-screen" class="overlay-panel" style="display:none;">
+        <h2>Game Over!</h2>
+        <p>Your final score was <strong id="final-score">0</strong>.</p>
+        <button class="btn-start" onclick="startGame()">PLAY AGAIN</button>
+    </div>
+
+    <div class="stats">
+        <div>SCORE: <span id="score">0</span></div>
+        <div class="high-score">BEST: <span id="high-score">0</span></div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-pill">ROUND <span id="round">0</span></div>
+        <div class="status-pill">TIME <span id="timer">15</span>s</div>
+        <div class="status-pill">LIVES <span id="lives">3</span></div>
+    </div>
+    
+    <select id="grade-level" onchange="resetAndNext()">
+        <option value="elementary">Grade: Elementary (400+ Words)</option>
+        <option value="middle">Grade: Middle School (400+ Words)</option>
+        <option value="high">Grade: High School (400+ Words)</option>
+        <option value="expert">Grade: Expert Challenge (400+ Words)</option>
+    </select>
+
+    <select id="rounds-select" onchange="setRoundCount()">
+        <option value="5">Rounds: 5</option>
+        <option value="10" selected>Rounds: 10</option>
+        <option value="15">Rounds: 15</option>
+        <option value="20">Rounds: 20</option>
+        <option value="inf">Rounds: Infinite</option>
+    </select>
+
+    <div id="definition">Press "Start Game" to begin!</div>
+    <input type="text" id="user-input" placeholder="Type word here..." autocomplete="off">
+    
+    <div class="controls">
+        <button class="btn-hear" onclick="speakWord()">🔊 LISTEN</button>
+        <button class="btn-hint" onclick="getHint()">💡 HINT</button>
+        <button class="btn-submit" onclick="checkSpelling()">SUBMIT ANSWER</button>
+    </div>
+</div>
+
+<div id="confetti-layer"></div>
+
+<button id="account-btn" onclick="showLoginModal()">ACCOUNT</button>
+<button id="settings-btn" onclick="showSettingsModal()" style="right:18px; top:18px; position:fixed; z-index:1000; background:#f5a742; color:#000; border-radius:999px; padding:10px 14px; border:none; cursor:pointer;">SETTINGS</button>
+
+<div id="login-modal" onclick="hideLoginModal(event)">
+    <div id="login-box">
+        <button class="admin-password-close" onclick="closeLoginModal(event)">✕</button>
+        <h3 id="login-title">ACCOUNT LOGIN</h3>
+        <p id="login-description">Enter username and password. Score 100 is required.</p>
+        <div class="admin-password-message" id="login-message"></div>
+        <input type="text" id="login-username" placeholder="Username">
+        <input type="password" id="login-password" placeholder="Password">
+        <input type="email" id="login-email" placeholder="Email (required for signup)" style="display:none;">
+        <div id="signup-captcha" style="display:none; color:#0f0; margin-bottom: 10px; font-size: 0.92rem;">
+            <label><input type="checkbox" id="captcha-check"> I'm not a robot</label>
+        </div>
+        <button class="admin-btn" id="login-action-btn" onclick="loginAccount()">LOG IN</button>
+        <button class="admin-btn" id="toggle-signup-btn" style="background:#6c5ce7; color:white;" onclick="toggleAuthMode('signup')">SIGN UP</button>
+        <button class="admin-btn" id="switch-to-login-btn" style="background:#f5a742; color:#000; display:none;" onclick="toggleAuthMode('login')">BACK TO LOGIN</button>
+        <button class="admin-btn" id="logout-btn" onclick="logoutAccount()" style="margin-top: 8px; display: none; background: #ff5555; color: white;">LOG OUT</button>
+    </div>
+</div>
+
+<div id="settings-modal" onclick="hideSettingsModal(event)" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:1002;">
+    <div style="width:min(360px,100%); background:#111; border:2px solid #00ff00; border-radius:12px; padding:16px; position:relative;">
+        <button style="position:absolute; right:10px; top:10px; background:transparent; border:none; color:#0f0; font-size:1.2rem;" onclick="hideSettingsModal(event)">✕</button>
+        <h3 style="color:#00ff00; font-family:monospace;">Account Settings</h3>
+        <div id="settings-content">
+            <p id="settings-info" style="color:#9ae6b4;">Not signed in.</p>
+            <input id="settings-old-password" type="password" placeholder="Current password" style="display:block; margin-bottom:8px;">
+            <input id="settings-new-password" type="password" placeholder="New password" style="display:block; margin-bottom:8px;">
+            <button class="admin-btn" onclick="changePassword()">Change Password</button>
+            <hr style="margin:12px 0; border-color:#222">
+            <button class="admin-btn" style="background:#ff5555; color:white;" onclick="deleteAccountConfirm()">Delete Account</button>
+            <hr style="margin:12px 0; border-color:#222">
+            <textarea id="help-message" placeholder="Describe the issue..." style="width:100%; height:80px; margin-bottom:8px;"></textarea>
+            <button class="admin-btn" style="background:#4b8bf5; color:white;" onclick="requestHelp()">Request Help</button>
+        </div>
+    </div>
+</div>
+
+<div id="admin-panel">
+    <div class="admin-header" id="admin-header">
+        <h3 class="admin-title">[ROOT@SYSTEM_ADMIN]</h3>
+        <div class="admin-toolbar">
+            <button class="admin-btn small" onclick="toggleAdminMinimize()">—</button>
+            <button class="admin-btn small admin-close-btn" onclick="closeAdmin()">✕</button>
+        </div>
+    </div>
+
+    <div class="admin-body">
+        <div class="admin-section">
+            <button class="admin-btn reveal-btn" onclick="revealAnswer()">🔓 DECRYPT (REVEAL)</button>
+            <button class="admin-btn" style="background: #0984e3; color: white;" onclick="autoSolve()">🤖 AUTO-SOLVE (FORCE)</button>
+        </div>
+
+        <div class="admin-section">
+            <button class="admin-btn" onclick="skipWord()">⏭ SKIP WORD</button>
+            <button class="admin-btn" onclick="resetScore()">↺ RESET SCORE</button>
+            <button class="admin-btn" onclick="instantWin()">⚡ INSTANT WIN</button>
+            <button class="admin-btn" onclick="toggleAutoSpeak(this)">🔊 AUTO-HEAR ON</button>
+            <button class="admin-btn" onclick="toggleAutoType(this)">⌨ AUTO TYPE OFF</button>
+            <button class="admin-btn" onclick="toggleInfiniteTime(this)">⏱ INFINITE TIME OFF</button>
+        </div>
+
+        <div class="admin-section">
+            <label style="color:#0f0; font-size: 11px;">INJECT NEW WORD:</label>
+            <input type="text" id="new-word-input" class="admin-input" placeholder="...">
+            <button class="admin-btn" onclick="addNewWord()">PUSH TO DB</button>
+        </div>
+
+        <div class="admin-section">
+            <label style="color:#0f0; font-size: 11px;">OVERWRITE SCORE:</label>
+            <input type="number" id="hack-score-input" class="admin-input" placeholder="0000">
+            <button class="admin-btn" onclick="hackScore()">SET SCORE</button>
+        </div>
+
+        <button class="admin-close" onclick="closeAdmin()">DISCONNECT</button>
+    </div>
+</div>
+
+<div id="admin-password-modal" onclick="hideAdminPasswordModal(event)">
+    <div id="admin-password-box">
+        <button class="admin-password-close" onclick="closeAdminPasswordModal(event)">✕</button>
+        <h3>ADMIN ACCESS</h3>
+        <p>Enter admin password.</p>
+        <div class="admin-password-message" id="admin-password-message"></div>
+        <input type="password" id="admin-password-input" placeholder="Enter admin password">
+        <button class="admin-btn" onclick="verifyAdminPassword()">UNLOCK</button>
+    </div>
+</div>
+
+<script>
+    // --- 800 Word Massive Vocabulary Bank ---
+    const wordBank = {
+        elementary: [
+            "about", "above", "across", "actor", "after", "again", "agree", "airplane", "alarm", "alligator", 
+            "along", "always", "animal", "answer", "apple", "apron", "around", "arrow", "artist", "autumn", 
+            "bacon", "badge", "baker", "balloon", "banana", "basket", "beach", "beans", "beautiful", "beauty", 
+            "beaver", "because", "before", "began", "begin", "behind", "believe", "bench", "berry", "better", 
+            "between", "bicycle", "bigger", "biggest", "blanket", "block", "blood", "blouse", "board", "boat", 
+            "body", "bone", "bonus", "book", "bottle", "bottom", "bounce", "bowl", "brain", "branch", 
+            "brave", "bread", "break", "breakfast", "brick", "bridge", "bright", "bring", "brother", "brush", 
+            "buffalo", "buggy", "build", "builder", "building", "built", "bulb", "bunch", "bunny", "burger", 
+            "bush", "bushel", "business", "busy", "butter", "button", "buyer", "cabin", "cable", "cactus", 
+            "cage", "cake", "calendar", "camel", "camera", "camp", "campaign", "candle", "candy", "cane", 
+            "cannon", "canoe", "canvas", "canyon", "cape", "capital", "captain", "caravan", "cardboard", "career", 
+            "careful", "careless", "cargo", "carol", "carpenter", "carpet", "carriage", "carrot", "carry", "cart", 
+            "carve", "case", "cashier", "castle", "catch", "caterpillar", "cattle", "caught", "cause", "cave", 
+            "ceiling", "celery", "cellar", "cement", "center", "centipede", "century", "cereal", "certain", "chain", 
+            "chair", "chalk", "champion", "chance", "change", "channel", "chapel", "chapter", "character", "charcoal", 
+            "charge", "charm", "chart", "chase", "cheap", "cheat", "check", "cheer", "cheese", "chef", 
+            "cherry", "chess", "chest", "chestnut", "chew", "chicken", "chief", "childhood", "children", "chili", 
+            "chill", "chimney", "chimpanzee", "chin", "china", "chipmunk", "chirp", "chocolate", "choice", "choir", 
+            "choose", "chopstick", "chorus", "chose", "chosen", "chrome", "chubby", "church", "churn", "cigar", 
+            "circle", "circus", "citizen", "city", "clam", "clap", "class", "classic", "classmate", "classroom"
+        ],
+        middle: [
+            "absence", "abundance", "accelerate", "acceptable", "accessible", "accidental", "accommodate", "accomplish", "accuracy", "accurate", 
+            "achievement", "acknowledge", "acquire", "adequate", "admission", "adolescent", "advantage", "advertise", "affection", "agreement", 
+            "agriculture", "allotment", "alteration", "alternative", "ambassador", "ambition", "ambitious", "amplitude", "amusement", "analysis", 
+            "analyze", "ancestor", "anniversary", "announcement", "anonymous", "anticipate", "apologize", "apparatus", "apparent", "appearance", 
+            "applicant", "appointment", "appreciation", "approach", "approval", "architecture", "argument", "arrangement", "artificial", "artistic", 
+            "ascension", "assistance", "association", "assumption", "assurance", "atmosphere", "attachment", "attendance", "attention", "attitude", 
+            "attraction", "attractive", "audience", "authority", "automobile", "availability", "available", "background", "baggage", "balance", 
+            "bargain", "barometer", "beautiful", "beginning", "behavior", "beneficial", "benefit", "benevolent", "betrayal", "bibliography", 
+            "bilingual", "biography", "biological", "blanket", "blunder", "boisterous", "boundary", "boycott", "brilliant", "broadcast", 
+            "brochure", "bulletin", "bureaucracy", "business", "calculator", "calendar", "camouflage", "campaign", "cancellation", "candidate", 
+            "capability", "capacity", "capitalism", "captain", "caption", "carbohydrate", "career", "caricature", "carnival", "cartilage", 
+            "catastrophe", "category", "caution", "celebration", "celebrity", "celestial", "cemetery", "census", "centennial", "ceremony", 
+            "certificate", "challenge", "championship", "characteristic", "charity", "chemical", "chemistry", "chronological", "circulation", "circumference", 
+            "circumstance", "civilization", "classification", "classify", "clearance", "coincidence", "collaboration", "collapse", "colleague", "collection", 
+            "collective", "collision", "colloquial", "colonization", "combination", "comedian", "comfortable", "commandment", "commemoration", "commence", 
+            "commendable", "commentary", "commercial", "commission", "commitment", "committee", "commodity", "commonwealth", "communicate", "communication", 
+            "community", "companion", "comparable", "comparative", "comparison", "compassion", "compatible", "compelled", "compensation", "competence", 
+            "competent", "competition", "competitive", "competitor", "compilation", "complaint", "complement", "completion", "complexion", "compliance", 
+            "compliment", "component", "composition", "compound", "comprehend", "comprehension", "comprehensive", "compromise", "compulsory", "computation"
+        ],
+        high: [
+            "aberration", "abhorrent", "abjure", "ablution", "abnegation", "abominable", "aboriginal", "abortive", "abrade", "abrogate", 
+            "scission", "absolute", "abstemious", "abstinence", "abstract", "abstruse", "abundant", "abysmal", "academic", "accede", 
+            "accelerate", "accentuate", "acceptable", "accessible", "acclaim", "acclivity", "accolade", "accommodate", "accomplice", "accord", 
+            "accost", "accoutre", "accretion", "accrue", "acerbity", "acetic", "acidulous", "acknowledge", "acme", "acoustics", 
+            "acquiesce", "acquittal", "acrid", "acrimonious", "acrophobia", "actuarial", "actuate", "acuity", "acumen", "acute", 
+            "adage", "adamant", "adapt", "addendum", "addiction", "addle", "address", "adduce", "adept", "adhere", 
+            "adherent", "adipose", "adjacent", "adjuration", "adjure", "adjunct", "adjuration", "adjutant", "admonish", "adorn", 
+            "adroit", "adulation", "adulterate", "adumbration", "advent", "adventitious", "adversary", "adverse", "adversity", "advocate", 
+            "aegis", "aerie", "aesthetic", "affable", "affectation", "affiliated", "affinity", "affirmation", "affix", "affliction", 
+            "affluence", "affront", "aftermath", "agape", "agenda", "agglomeration", "aggrandize", "aggregate", "aghast", "agility", 
+            "agitate", "agnostic", "agrarian", "alacrity", "alchemy", "alcove", "alias", "alienate", "alimentary", "alimony", 
+            "allay", "allege", "allegory", "alleviate", "alliteration", "allocate", "allocution", "allusion", "alluvion", "aloof", 
+            "altercation", "altruism", "amalgamate", "amass", "amazon", "ambidextrous", "ambiance", "ambiguous", "ambivalence", "amble", 
+            "ambrosia", "ambulatory", "ameliorate", "amenable", "amend", "amenities", "amiable", "amicable", "amiss", "amity", 
+            "amnesia", "amnesty", "amoral", "amorphous", "amphibian", "amphitheater", "ample", "amplify", "amputate", "amok", 
+            "amulet", "anachronism", "analgesic", "analogous", "analogy", "anarchist", "anarchy", "anathema", "ancestry", "anchor", 
+            "ancillary", "anecdote", "anemia", "anesthetic", "animus", "annals", "anneal", "annihilate", "annotate", "annuity"
+        ],
+        expert: [
+            "accommodation", "accoutrement", "acquiescence", "amateur", "anemone", "annihilation", "anonymous", "archetype", "asphyxiation", "assassination", 
+            "bureaucracy", "cacophony", "camouflage", "caricature", "catacomb", "cemetery", "chameleon", "chrysanthemum", "clandestine", "coalescence", 
+            "colloquialism", "commemoration", "connoisseur", "conscientious", "convalescence", "cryptography", "defibrillator", "deliquescence", "desynchronization", "deterioration", 
+            "idiosyncrasy", "impromptu", "incandescent", "inconceivable", "indictment", "infinitesimal", "irresistible", "juxtaposition", "kaleidoscope", "labyrinthine", 
+            "liaison", "liquefaction", "luminescence", "maintenance", "maneuverability", "masquerade", "millennium", "minuscule", "mischievous", "misspelled", 
+            "myrmidon", "nauseous", "necromancy", "negligible", "nomenclature", "obsolescence", "occurrence", "onomatopoeia", "oscilloscope", "pachyderm", 
+            "paraphernalia", "parliamentary", "pharmaceutical", "pharaoh", "philanthropy", "phosphorescence", "physique", "playwright", "pneumonia", "pompous", 
+            "predecessor", "presumptuous", "procrastinate", "pronunciation", "pseudonym", "psychedelic", "ptodactyl", "purgatory", "pyrotechnics", "questionnaire", 
+            "quizzical", "reminiscent", "rendezvous", "repertoire", "reservoir", "resuscitation", "reverberation", "rhythm", "sacrilegious", "schizophrenia", 
+            "scintillate", "sepulcher", "silhouette", "simultaneous", "sovereignty", "spherical", "spontaneous", "subterranean", "succumb", "supersede", 
+            "surveillance", "susceptibility", "synchronous", "synecdoche", "therapeutic", "threshold", "tranquility", "transcendental", "twelfth", "ubiquitous", 
+            "unanimous", "unprecedented", "vacuum", "vaudeville", "vehement", "verisimilitude", "veterinary", "vicissitude", "vilification", "vivacious", 
+            "whimsical", "xenophobia", "yacht", "zealous", "zephyr", "zucchini", "abominably", "abruptness", "abscission", "abstitential", 
+            "academician", "acceptancy", "accidentality", "acclimatization", "accommodativeness", "accomplishable", "accorporate", "accoutred", "acquisitiveness", "acrimoniousness", 
+            "adenocarcinoma", "administration", "aerodynamicist", "affectionateness", "aggrandizement", "agriculturalist", "alienability", "allopolypoid", "alphabetization", "ambidextrousness", 
+            "ambitiously", "amphitheatered", "anachronistically", "analogousness", "anatomization", "anesthesiology", "angiospermatous", "animadvert", "annihilable", "anthopomorphize", 
+            "anticorruption", "antidisestablishmentarianism", "antimacassar", "antipersonnel", "antithetical", "apprehensiveness", "approachability", "appropriateness", "archaeological", "architectonic", 
+            "argumentativeness", "aristocratism", "arithmetically", "artistically", "asymmetrical", "atmosphere", "attentiveness", "attractiveness", "authoritarianism", "autobiographical", 
+            "autocratical", "automatization", "avalanched", "backwardness", "bacteriologist", "beautifully", "belligerency", "beneficialness", "benevolently", "bibliography", 
+            "biodegradability", "biogeochemical", "bioluminescence", "bissextile", "blameworthiness", "bloodthirstiness", "boisterousness", "bountifully", "breathlessness", "breathtakingly", 
+            "bureaucratization", "burdensomeness", "calamitousness", "calculation", "calligraphist", "cannibalization", "capriciousness", "captivatingly", "carbohydrate", "cardiothoracic"
+        ]
+    };
+
+    const supplementaryWords = {
+        elementary: [
+            "ability","absent","academy","accept","accident","active","address","admit","advance","advice","afraid","allow","amount","announce","anxious","apartment","apparent","argue","arrive","assist","attend","award","balance","barbecue","barrel","baseball","basic","battle","beast","become","beginner","behavior","belong","benefit","beside","bison","blizzard","boast","borrow","breeze","brilliant","bucket","bullet","calm","carefully","carnival","cease","celebrate","certainly","chamber","chant","chemical","citron","clever","climate","cloud","coast","coconut","collect","college","comfort","compete","complete","compose","concentrate","concert","confident","confuse","congratulate","connect","consist","contain","conversation","cooperate","copper","cousin","create","creature","crystal","curious","custom","dawn","delight","demonstrate","design","detail","device","dial","dinosaur","disease","distance","distant","donate","double","drizzle","duty","eager","earn","earthquake","easily","echo","educate","efficient","electric","element","emerge","encourage","enemy","entire","entrance","equipment","escape","especially","essay","examine","excellent","except","excited","exclaim","explain","explore","express","familiar","famous","feather","fiction","figure","finally","flavor","flood","forgive","fortune","friendly","frustrate","future","gather","gentle","glacier","globe","gorgeous","govern","graceful","grateful","grocery","habit","harbor","harmful","harvest","heat","heavily","horizon","humble","humor","illustrate","imagine","improve","include","incredible","indicate","industry","invent","island","jungle","junior","justice","kernel","kindness","labor","ladder","language","launch","layer","leader","lemonade","library","limit","lively","loyal","magnificent","manage","marble","massive","measure","mention","mercy","merry","message","metal","method","mild","mineral","miracle","mistake","modern","moral","motor","mushroom","mystery","nation","nearly","neighborhood","nervous","notice","observe","ocean","offer","opinion","ordinary","organize","original","outdoor","overcome","owner","parade","patient","pattern","peach","perform","pioneer","planet","pleasant","plenty","poem","polite","popcorn","portion","prefer","prepare","present","prince","prize","problem","promise","protect","pupil","puzzle","quarter","queen","quietly","rabbit","radar","raise","rapid","rarely","reason","recycle","rejoice","relax","remain","remember","repair","report","respect","result","rhythm","river","robot","rocket","romantic","route","royal","safety","sailor","sample","satisfy","savage","scatter","schedule","science","secret","separate","service","shadow","shelter","signal","silver","sincere","situation","skeleton","skillful","smile","society","softly","solar","special","spiral","splendid","staple","steady","stomach","storm","strange","stretch","submit","sudden","summer","support","surprise","survive","symbol","talent","teacher","telephone","telescope","temperature","tender","thunder","tiny","tourist","tradition","traffic","travel","tremble","trouble","truly","tunnel","turtle","understand","universe","urgent","vacation","valley","victory","village","volcano","vote","wallet","wander","warmth","wealth","whisper","wildlife","wonderful","worry","worthy","yesterday","youth","zebra"],
+        middle: [
+            "absorb","abstracted","accommodate","acoustic","adequately","adolescent","aesthetic","aggressive","allegiance","allocate","alter","ambassador","analyze","antique","apologetic","arbitrary","archeology","aroma","astronomy","autobiography","automatically","bargain","barricade","biology","blossom","brutal","calculation","campaign","capital","capture","careless","cater","ceramic","circuit","cognitive","colony","combination","comment","communicate","companion","compassionate","complicate","conclude","consequence","conserve","continuous","controversy","convince","cooperate","correspond","courageous","culinary","curiosity","declaration","decisive","delicate","democracy","descend","desperate","dignity","diminish","disaster","discipline","distribute","diverse","dominant","drastic","economy","effective","elaborate","eligible","emphasize","endure","enormous","entertain","equivalent","estimate","eventually","exceed","exception","exclusive","expedition","explain","explosion","extend","fascinate","feasible","fictional","finance","flexible","fossil","frequent","friction","furnish","genuine","geology","gesture","glimpse","governor","grateful","hazard","heritage","hilarious","hypothesis","identify","immediate","independent","influence","initiate","insight","intense","introduce","inventive","isolate","labyrinth","literal","maintain","mature","mechanic","memorial","migrate","miniature","moralize","musician","negotiate","noble","numerous","obstacle","occur","optimistic","organism","originate","outcome","paradox","participate","persistent","persuade","physical","plausible","politics","popular","precision","predict","prejudice","preserve","priority","procedure","process","productive","profound","proportion","protective","provoke","pursue","rebel","recipient","recommend","recovery","relevant","reluctant","represent","resource","response","reveal","sacred","satisfy","scholar","sensitive","severe","sincere","solidarity","sophisticated","speculate","stability","substantial","succeed","surround","suspicious","symbolic","tangible","tension","thorough","tolerance","tremendous","ultimate","uncertain","unify","urgent","urban","vacancy","vapor","velocity","venture","vivid","voluntary","widespread","witness","yield"],
+        high: [
+            "abandon","abduct","aberrant","absolve","abundance","accentuate","acclaim","acquaint","acrid","adversarial","adversity","aerial","aestheticism","affluent","alleviate","amalgam","ambivalent","amendment","anarchic","anomaly","anthology","apathy","approximate","arbitrary","ascertain","assiduous","astral","attainable","autonomy","beguile","benevolent","bilingual","blasphemy","capricious","censor","circuitous","circumvent","coherent","colossal","combustible","compendium","conducive","confederacy","conspicuous","constituent","contiguous","correlate","corruptible","culminate","curtail","cyclical","defer","delectable","deluge","demeanor","denounce","deplete","depravity","desolate","deter","diligent","diminutive","discreet","disseminate","dormant","duality","eccentric","efficacious","elusive","embellish","emissary","encumber","enigmatic","ephemeral","equanimity","erudite","evasive","exemplify","exhilarate","exonerate","exorbitant","expedient","exploit","facilitate","fidelity","fluctuate","fortitude","frugal","garrulous","germinate","gregarious","haphazard","hedonistic","hierarchy","hyperbole","iconoclast","idiosyncrasy","impartial","indigenous","indignant","ineffable","infinite","inhibit","insubstantial","intrepid","invigorate","ironic","jocular","labile","lament","luminous","magnanimous","malicious","meticulous","mitigate","mollify","monumental","myriad","negligible","nonchalant","novice","obdurate","obscure","oligarchy","omniscient","ornate","paradigm","perennial","perpetuate","perspicacious","philosophy","plausibility","pragmatic","precarious","predatory","preposterous","proclivity","prolific","propensity","prosaic","provisional","pugnacious","quandary","quixotic","rationalize","reconcile","rectify","refute","relinquish","remuneration","renounce","repertoire","requisite","resilient","reticent","sagacious","salient","sanction","sardonic","sceptical","scintillating","seclude","serene","solicit","solitude","sophistry","sporadic","stagnant","subjugate","subtle","succinct","suffice","surmise","tenacious","transient","ubiquitous","umbrage","unanimity","unwavering","usurp","venerate","vigilant","volatile","vulnerable","warranted","whimsical","zealous"],
+        expert: [
+            "abnegation","acclamation","accretion","adulterous","aeronautics","allegorical","allotropy","amalgamation","amorphousness","anatomical","anemometry","antagonistic","apocalyptic","arboriculture","archivist","articulation","asymptotic","autobiographical","autodidactic","bifurcation","capitulation","carnivorous","catastrophic","caustic","choreography","circumscription","cognizant","collateral","combustion","conflagration","conspicuously","constellation","contemplative","correlation","corroborate","culmination","decentralize","declarative","decomposition","defenestration","denotation","dichotomy","discombobulate","disorientation","electrolysis","elucidation","embellishment","enunciation","epistolary","equilibrium","euthanasia","extrapolate","fascination","felicitous","gastroenterology","geocentric","hieroglyphic","hydrodynamics","iconography","indefatigable","indiscernible","inquisitorial","interstitial","intricacy","invocation","juxtapose","ludicrousness","magnificence","metamorphosis","microcosm","neuroscience","obduracy","obfuscation","ornithologist","paradoxical","perfunctory","philanthropic","phenomenology","phosphorescent","polyglot","precariousness","predestination","proliferation","protagonist","pseudoscientific","psychological","quadrilateral","quintessential","reciprocity","recondite","rejuvenation","saccharine","sacrosanct","sanguine","sedimentation","serendipity","solicitation","sublimation","subordination","superimposed","supplication","syllabic","synchronization","teleological","transcendence","translucent","ubiquity","unfathomable","veracity","vicissitude","voraciousness","xenial","zealotry"]
+    };
+
+    const minimumWordsPerGrade = 400;
+    for (const grade in wordBank) {
+        if (wordBank[grade].length < minimumWordsPerGrade) {
+            const needed = minimumWordsPerGrade - wordBank[grade].length;
+            wordBank[grade] = wordBank[grade].concat(supplementaryWords[grade].slice(0, needed));
+        }
+    }
+
+    let currentWord = "";
+    let score = 0;
+    let signedInUser = localStorage.getItem('spellingSignedInUser') || null;
+    let highScore = 0;
+    let autoSpeakEnabled = true;
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+    let confettiMilestone = 0;
+    let gameStarted = false;
+    let gameOver = false;
+    let round = 0;
+    let maxRounds = 10;
+    let autoTypeEnabled = false;
+    let infiniteTimeEnabled = false;
+    let lives = 3;
+    let timeLeft = 15;
+    let timerInterval = null;
+
+    const input = document.getElementById('user-input');
+    const defBox = document.getElementById('definition');
+    const scoreBox = document.getElementById('score');
+    const highBox = document.getElementById('high-score');
+    const gradeSelect = document.getElementById('grade-level');
+    const adminPanel = document.getElementById('admin-panel');
+    const adminHeader = document.getElementById('admin-header');
+    const adminToggleBtn = document.getElementById('admin-toggle-btn');
+    const confettiLayer = document.getElementById('confetti-layer');
+    const startScreen = document.getElementById('start-screen');
+    const roundsSelect = document.getElementById('rounds-select');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const finalScoreBox = document.getElementById('final-score');
+    const roundBox = document.getElementById('round');
+    const timerBox = document.getElementById('timer');
+    const livesBox = document.getElementById('lives');
+    const signInInfo = document.getElementById('sign-in-info');
+    const accountBtn = document.getElementById('account-btn');
+    const adminPasswordInput = document.getElementById('admin-password-input');
+    const adminPasswordMessage = document.getElementById('admin-password-message');
+    const loginUsername = document.getElementById('login-username');
+    const loginPassword = document.getElementById('login-password');
+    const loginEmail = document.getElementById('login-email');
+    const signupCaptcha = document.getElementById('signup-captcha');
+    const loginMessage = document.getElementById('login-message');
+    const loginActionBtn = document.getElementById('login-action-btn');
+    const toggleSignupBtn = document.getElementById('toggle-signup-btn');
+    const switchToLoginBtn = document.getElementById('switch-to-login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    let authMode = 'login';
+    let signupCaptchaRequired = false;
+
+    initializeSignInState();
+    updateAccountButton();
+    updateStatus();
+
+    adminPasswordInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            verifyAdminPassword();
+        }
+    });
+    loginUsername.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            loginAccount();
+        }
+    });
+    loginPassword.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            loginAccount();
+        }
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === "\\") {
+            e.preventDefault();
+            // If admin already unlocked, toggle/close the panel directly.
+            if (adminUnlocked) {
+                if (adminPanel && adminPanel.style.display === 'block') {
+                    closeAdmin();
+                } else {
+                    openAdminPanel();
+                }
+            } else {
+                showAdminPasswordModal();
+            }
+        }
+    });
+
+    window.addEventListener('keydown', (e) => {
+        const key = (e.key || '').toString();
+        const isDevShortcut = ((e.ctrlKey || e.metaKey) && e.shiftKey && (key.toLowerCase() === 'i' || key.toLowerCase() === 'j')) || key === 'F12';
+        if (isDevShortcut) {
+            console.warn('STOP! dont paste in random links u find on the internet could then be used to steal your account!');
+        }
+    });
+
+    const defaultAccounts = {
+        'alice': { password: 'apple123', admin: false },
+        'duke': { password: 'bestfriend', admin: false },
+        'riyaz dev': { password: 'icreatedthisgame', admin: true },
+        'terrence': { password: 'coolcode', admin: true }
+    };
+    const rawSaved = JSON.parse(localStorage.getItem('spellingAccounts') || 'null') || {};
+    const savedAccounts = {};
+    for (const k in rawSaved) {
+        if (!Object.prototype.hasOwnProperty.call(rawSaved, k)) continue;
+        savedAccounts[k.toLowerCase()] = rawSaved[k];
+    }
+    const accounts = { ...defaultAccounts, ...savedAccounts };
+    let currentAccount = null;
+    let adminUnlocked = false;
+    const validAdminPasswords = [
+        'chloe helper',
+        'riyaz dev',
+        'duke bestfriend',
+        'terrence cool'
+    ];
+    let adminAttempts = 3;
+
+    function showLoginModal() {
+        loginMessage.innerText = '';
+        loginUsername.value = '';
+        loginPassword.value = '';
+        const lm = document.getElementById('login-modal');
+        if (!lm) return;
+        lm.removeAttribute('data-removed');
+        toggleAuthMode('login');
+        lm.style.display = 'flex';
+        loginUsername.focus();
+    }
+
+    function closeLoginModal(event) {
+        event.stopPropagation();
+        document.getElementById('login-modal').style.display = 'none';
+    }
+
+    function hideLoginModal(event) {
+        if (event.target.id === 'login-modal') {
+            document.getElementById('login-modal').style.display = 'none';
+        }
+    }
+
+    async function loginAccount() {
+        const username = loginUsername.value.trim().toLowerCase();
+        const password = loginPassword.value;
+        const email = loginEmail.value.trim().toLowerCase();
+
+        if (authMode === 'signup') {
+            if (!username || !password || !email) {
+                loginMessage.innerText = 'Username, password, and email are required.';
+                return;
+            }
+            if (signupCaptchaRequired && !document.getElementById('captcha-check').checked) {
+                loginMessage.innerText = 'Please complete the captcha.';
+                return;
+            }
+            if (accounts[username]) {
+                loginMessage.innerText = 'That username is already taken.';
+                return;
+            }
+            // create locally and also POST to backend if available
+            accounts[username] = { password, admin: false, email };
+            localStorage.setItem('spellingAccounts', JSON.stringify(accounts));
+            // attempt server signup
+            try {
+                const res = await fetch('/api/signup', {
+                    method: 'POST', headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ username, password, email })
+                });
+                const j = await res.json().catch(() => null);
+                if (j && j.ok) console.log('Server signup ok'); else console.warn('Server signup failed', j);
+            } catch (e) {
+                console.warn('Server signup not available');
+            }
+            // auto sign-in locally
+            signedInUser = username;
+            currentAccount = accounts[username];
+            localStorage.setItem('spellingSignedInUser', signedInUser);
+            loginMessage.innerText = 'Account created. Signed in.';
+            simulateEmailUpdate('Welcome! Your account was created.', email);
+            initializeSignInState();
+            updateAccountButton();
+            const lm = document.getElementById('login-modal');
+            if (lm) { lm.style.display = 'none'; lm.removeAttribute('data-removed'); }
+            return;
+        }
+
+        if (!username || !password) {
+            loginMessage.innerText = 'Enter username and password.';
+            return;
+        }
+
+        // Try server-side login first
+        let authSuccess = false;
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            if (res.ok) {
+                const j = await res.json().catch(() => null);
+                if (j && j.ok) {
+                    // sync local store
+                    accounts[username] = accounts[username] || { password, admin: !!j.admin, email: j.email || '' };
+                    accounts[username].password = password;
+                    if (j.email) accounts[username].email = j.email;
+                    localStorage.setItem('spellingAccounts', JSON.stringify(accounts));
+                    currentAccount = accounts[username];
+                    signedInUser = username;
+                    localStorage.setItem('spellingSignedInUser', signedInUser);
+                    authSuccess = true;
+                }
+            }
+        } catch (e) {
+            // server not reachable, fallback to local
+            console.warn('Server login unavailable, using local accounts');
+        }
+
+        if (!authSuccess) {
+            // fallback to local auth
+            if (!accounts[username] || accounts[username].password !== password) {
+                loginMessage.innerText = 'Whoops wrong password.';
+                return;
+            }
+            currentAccount = accounts[username];
+            signedInUser = username;
+            localStorage.setItem('spellingSignedInUser', signedInUser);
+        }
+
+        // after login, hide the sign-in UI without permanently disabling it
+        const lm2 = document.getElementById('login-modal');
+        if (lm2) { lm2.style.display = 'none'; lm2.removeAttribute('data-removed'); }
+        initializeSignInState();
+        updateAccountButton();
+
+        // Admin panel opening is gated: riyaz dev auto-unlocks; other admin accounts need score>=100 or prior unlock
+        if (currentAccount.admin) {
+            if (username === 'riyaz dev') {
+                adminUnlocked = true;
+                localStorage.setItem('spellingAdminUnlocked', '1');
+                openAdminPanel();
+            } else if (adminUnlocked || score >= 100) {
+                adminUnlocked = true;
+                localStorage.setItem('spellingAdminUnlocked', '1');
+                openAdminPanel();
+            } else {
+                loginMessage.innerText = 'Admin account recognized. Score 100 required to open admin panel. Or press \\ to enter admin password.';
+            }
+        }
+    }
+
+    function logoutAccount() {
+        signedInUser = null;
+        currentAccount = null;
+        adminUnlocked = false;
+        localStorage.removeItem('spellingSignedInUser');
+        localStorage.removeItem('spellingAdminUnlocked');
+        initializeSignInState();
+        updateAccountButton();
+    }
+
+    function showSettingsModal() {
+        const sm = document.getElementById('settings-modal');
+        if (!sm) return;
+        sm.style.display = 'flex';
+        const info = document.getElementById('settings-info');
+        if (signedInUser) {
+            info.innerText = `Signed in as ${signedInUser}`;
+        } else {
+            info.innerText = 'Not signed in.';
+        }
+    }
+
+    function hideSettingsModal(event) {
+        if (event && event.target && event.target.id === 'settings-modal') {
+            document.getElementById('settings-modal').style.display = 'none';
+        } else {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+    }
+
+    function changePassword() {
+        const oldP = document.getElementById('settings-old-password').value;
+        const newP = document.getElementById('settings-new-password').value;
+        if (!signedInUser) return alert('Sign in first');
+        if (!oldP || !newP) return alert('Enter both passwords');
+        fetch('/api/account/change-password', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ username: signedInUser, oldPassword: oldP, newPassword: newP })
+        }).then(r => r.json()).then(j => {
+            if (j && j.ok) {
+                alert('Password updated (server).');
+            } else {
+                alert('Password change failed.');
+            }
+        }).catch(() => alert('Server not available.'));
+    }
+
+    function deleteAccountConfirm() {
+        if (!signedInUser) return alert('Sign in first');
+        if (!confirm('Delete your account? This is permanent.')) return;
+        fetch(`/api/account/${encodeURIComponent(signedInUser)}`, { method: 'DELETE' })
+            .then(r => r.json()).then(j => {
+                if (j && j.ok) {
+                    alert('Account deleted (server).');
+                    logoutAccount();
+                } else {
+                    alert('Delete failed.');
+                }
+            }).catch(() => alert('Server not available.'));
+    }
+
+    function requestHelp() {
+        const msg = document.getElementById('help-message').value.trim();
+        if (!signedInUser) return alert('Sign in first');
+        if (!msg) return alert('Write a message.');
+        const email = (accounts[signedInUser] && accounts[signedInUser].email) || '';
+        fetch('/api/request-help', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: signedInUser, email, message: msg }) })
+            .then(r => r.json()).then(j => {
+                if (j && j.ok) alert('Help request sent.'); else alert('Request failed.');
+            }).catch(() => alert('Server not available.'));
+    }
+
+    function updateAccountButton() {
+        if (signedInUser) {
+            accountBtn.textContent = `USER: ${signedInUser}`;
+            if (logoutBtn) {
+                logoutBtn.style.display = 'block';
+            }
+        } else {
+            accountBtn.textContent = 'LOGIN';
+            if (logoutBtn) {
+                logoutBtn.style.display = 'none';
+            }
+        }
+    }
+
+    function toggleAuthMode(mode) {
+        authMode = mode;
+        const title = document.getElementById('login-title');
+        const description = document.getElementById('login-description');
+        if (mode === 'signup') {
+            loginActionBtn.textContent = 'SIGN UP';
+            toggleSignupBtn.style.display = 'none';
+            switchToLoginBtn.style.display = 'block';
+            loginEmail.style.display = 'block';
+            signupCaptchaRequired = Math.random() < 0.5;
+            signupCaptcha.style.display = signupCaptchaRequired ? 'block' : 'none';
+            loginMessage.innerText = 'Create a new account. Email is required.';
+            title.innerText = 'CREATE ACCOUNT';
+            description.innerText = 'Sign up with email and password. A captcha may be required.';
+        } else {
+            loginActionBtn.textContent = 'LOG IN';
+            toggleSignupBtn.style.display = 'block';
+            switchToLoginBtn.style.display = 'none';
+            loginEmail.style.display = 'none';
+            signupCaptcha.style.display = 'none';
+            loginMessage.innerText = '';
+            title.innerText = 'ACCOUNT LOGIN';
+            description.innerText = 'Enter username and password. Admin panel requires score 100 to open.';
+        }
+    }
+
+    function simulateEmailUpdate(subject, email) {
+        console.log(`Email sent to ${email}: ${subject}`);
+        setTimeout(() => {
+            if (signedInUser && accounts[signedInUser] && accounts[signedInUser].email === email) {
+                loginMessage.innerText = `Email update sent to ${email}.`;
+            }
+        }, 1200);
+    }
+
+    function showAdminPasswordModal() {
+        if (adminAttempts <= 0) {
+            adminPasswordMessage.innerText = 'Admin access blocked after too many wrong attempts.';
+            adminPasswordInput.disabled = true;
+            document.getElementById('admin-password-modal').style.display = 'flex';
+            return;
+        }
+        document.getElementById('admin-password-modal').style.display = 'flex';
+        adminPasswordInput.disabled = false;
+        adminPasswordInput.value = '';
+        adminPasswordInput.focus();
+        adminPasswordMessage.innerText = `Attempts left: ${adminAttempts}`;
+    }
+
+    function closeAdminPasswordModal(event) {
+        event.stopPropagation();
+        document.getElementById('admin-password-modal').style.display = 'none';
+    }
+
+    function hideAdminPasswordModal(event) {
+        if (event.target.id === 'admin-password-modal') {
+            document.getElementById('admin-password-modal').style.display = 'none';
+        }
+    }
+
+    function verifyAdminPassword() {
+        const inputEl = document.getElementById('admin-password-input');
+        const messageEl = document.getElementById('admin-password-message');
+        const guess = inputEl.value.trim().toLowerCase();
+        if (!guess) {
+            messageEl.innerText = 'Type one of the admin passwords.';
+            return;
+        }
+
+        if (validAdminPasswords.includes(guess)) {
+            messageEl.innerText = 'Access granted.';
+            adminUnlocked = true;
+            localStorage.setItem('spellingAdminUnlocked', '1');
+            document.getElementById('admin-password-modal').style.display = 'none';
+            openAdminPanel();
+            adminAttempts = 3;
+            return;
+        }
+
+        adminAttempts -= 1;
+        if (adminAttempts <= 0) {
+            messageEl.innerText = 'No attempts left. Access blocked.';
+            document.getElementById('admin-password-input').disabled = true;
+            return;
+        }
+
+        messageEl.innerText = `Wrong password. Attempts left: ${adminAttempts}`;
+        inputEl.value = '';
+        inputEl.focus();
+    }
+
+    function openAdminPanel() {
+        adminPanel.style.display = "block";
+        adminPanel.style.top = "50%";
+        adminPanel.style.left = "50%";
+        adminPanel.style.transform = "translate(-50%, -50%)";
+        if (adminToggleBtn) {
+            adminToggleBtn.style.display = "none";
+        }
+    }
+
+    function closeAdmin() {
+        adminPanel.style.display = "none";
+        if (adminToggleBtn) {
+            adminToggleBtn.style.display = "block";
+        }
+    }
+
+    function toggleAdminMinimize() {
+        if (adminPanel.style.display === "block") {
+            adminPanel.style.display = "none";
+            if (adminToggleBtn) {
+                adminToggleBtn.style.display = "block";
+            }
+        } else {
+            openAdminPanel();
+        }
+    }
+
+    function startDrag(e) {
+        if (adminPanel.style.display !== "block") return;
+        const rect = adminPanel.getBoundingClientRect();
+        dragOffset.x = e.clientX - rect.left;
+        dragOffset.y = e.clientY - rect.top;
+        isDragging = true;
+        adminPanel.style.transition = "none";
+        adminPanel.style.transform = "none";
+    }
+
+    function onDrag(e) {
+        if (!isDragging) return;
+        const maxX = window.innerWidth - adminPanel.offsetWidth;
+        const maxY = window.innerHeight - adminPanel.offsetHeight;
+        const left = Math.min(Math.max(e.clientX - dragOffset.x, 0), maxX);
+        const top = Math.min(Math.max(e.clientY - dragOffset.y, 0), maxY);
+        adminPanel.style.left = `${left}px`;
+        adminPanel.style.top = `${top}px`;
+    }
+
+    function stopDrag() {
+        isDragging = false;
+    }
+
+    adminHeader.addEventListener('mousedown', startDrag);
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('mouseup', stopDrag);
+
+    function revealAnswer() {
+        alert(`SYSTEM RECOVERY: ${currentWord.toUpperCase()}`);
+    }
+
+    function autoSolve() {
+        input.value = currentWord;
+        closeAdmin();
+        setTimeout(checkSpelling, 200);
+    }
+
+    function skipWord() {
+        nextWord();
+        startTimer();
+    }
+
+    function resetScore() {
+        score = 0;
+        updateScoreDisplay();
+    }
+
+    function instantWin() {
+        score += 50;
+        updateScoreDisplay();
+        nextWord();
+        startTimer();
+    }
+
+    function toggleAutoSpeak(button) {
+        autoSpeakEnabled = !autoSpeakEnabled;
+        button.textContent = autoSpeakEnabled ? "🔊 AUTO-HEAR ON" : "🔊 AUTO-HEAR OFF";
+    }
+
+    function toggleAutoType(button) {
+        autoTypeEnabled = !autoTypeEnabled;
+        button.textContent = autoTypeEnabled ? "⌨ AUTO TYPE ON" : "⌨ AUTO TYPE OFF";
+        if (autoTypeEnabled && gameStarted && currentWord) {
+            typeWordAutomatically();
+        }
+    }
+
+    function typeWordAutomatically() {
+        if (!gameStarted || !currentWord) return;
+        input.value = "";
+        let index = 0;
+        const word = currentWord;
+        const typingInterval = setInterval(() => {
+            if (index >= word.length) {
+                clearInterval(typingInterval);
+                setTimeout(() => {
+                    if (autoTypeEnabled) {
+                        checkSpelling();
+                    }
+                }, 180);
+                return;
+            }
+            input.value += word[index];
+            index += 1;
+        }, 70);
+    }
+
+    function toggleInfiniteTime(button) {
+        infiniteTimeEnabled = !infiniteTimeEnabled;
+        button.textContent = infiniteTimeEnabled ? "⏱ INFINITE TIME ON" : "⏱ INFINITE TIME OFF";
+        if (infiniteTimeEnabled) {
+            timeLeft = 999;
+            updateStatus();
+        }
+    }
+
+    function hackScore() {
+        const val = parseInt(document.getElementById('hack-score-input').value);
+        if (!isNaN(val)) {
+            score = val;
+            updateScoreDisplay();
+        }
+    }
+
+    function addNewWord() {
+        const val = document.getElementById('new-word-input').value.trim().toLowerCase();
+        if (val) {
+            wordBank[gradeSelect.value].push(val);
+            document.getElementById('new-word-input').value = "";
+            alert("Database Updated.");
+        }
+    }
+
+    // --- Core Game Logic ---
+    async function fetchDefinition(word) {
+        defBox.innerText = "Connecting to Dictionary API...";
+        try {
+            const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+            const data = await res.json();
+            defBox.innerText = data[0].meanings[0].definitions[0].definition;
+        } catch {
+            defBox.innerText = "No definition found. Audio link stable.";
+        }
+    }
+
+    function speakWord() {
+        if (!currentWord) return;
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(currentWord);
+        msg.rate = 0.8;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function updateStatus() {
+        roundBox.innerText = gameStarted ? round + 1 : 0;
+        timerBox.innerText = timeLeft;
+        livesBox.innerText = lives;
+    }
+
+    function copyGameLink() {
+        const shareMessage = document.getElementById('share-message');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(window.location.href)
+                .then(() => {
+                    shareMessage.style.display = 'block';
+                    setTimeout(() => shareMessage.style.display = 'none', 2200);
+                })
+                .catch(() => {
+                    prompt('Copy this link:', window.location.href);
+                });
+        } else {
+            prompt('Copy this link:', window.location.href);
+        }
+    }
+
+    function initializeSignInState() {
+        if (signedInUser && accounts[signedInUser]) {
+            currentAccount = accounts[signedInUser];
+            const savedHigh = parseInt(localStorage.getItem(`spellingHighScore_${signedInUser}`), 10) || 0;
+            highScore = savedHigh;
+            highBox.innerText = highScore;
+            signInInfo.innerText = `Signed in as ${signedInUser}. Progress will be saved.`;
+            if (currentAccount.admin && localStorage.getItem('spellingAdminUnlocked') === '1') {
+                adminUnlocked = true;
+                // Do not auto-open the admin panel on load; require explicit action.
+            }
+        } else if (signedInUser) {
+            signedInUser = null;
+            currentAccount = null;
+            localStorage.removeItem('spellingSignedInUser');
+            highScore = 0;
+            highBox.innerText = 0;
+            signInInfo.innerText = 'Not signed in. Progress will not be saved unless you sign in.';
+        } else {
+            highScore = 0;
+            highBox.innerText = 0;
+            signInInfo.innerText = 'Not signed in. Progress will not be saved unless you sign in.';
+        }
+    }
+
+    function startGame() {
+        gameStarted = true;
+        gameOver = false;
+        score = 0;
+        round = 0;
+        lives = 3;
+        confettiMilestone = 0;
+        startScreen.style.display = 'none';
+        gameOverScreen.style.display = 'none';
+        updateScoreDisplay();
+        updateStatus();
+        clearInterval(timerInterval);
+        nextWord();
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timeLeft = 15;
+        updateStatus();
+        timerInterval = setInterval(() => {
+            if (infiniteTimeEnabled) {
+                timeLeft = 999;
+                updateStatus();
+                return;
+            }
+            timeLeft -= 1;
+            updateStatus();
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                handleRoundResult('timeout');
+            }
+        }, 1000);
+    }
+
+    function endGame() {
+        clearInterval(timerInterval);
+        gameStarted = false;
+        gameOver = true;
+        finalScoreBox.innerText = score;
+        gameOverScreen.style.display = 'flex';
+    }
+
+    function setRoundCount() {
+        const value = roundsSelect.value;
+        maxRounds = value === 'inf' ? Infinity : parseInt(value, 10) || 10;
+        if (gameStarted) {
+            startGame();
+        }
+    }
+
+    function nextWord() {
+        if (!gameStarted) return;
+        const words = wordBank[gradeSelect.value];
+        currentWord = words[Math.floor(Math.random() * words.length)];
+        input.value = "";
+        fetchDefinition(currentWord);
+        if (autoSpeakEnabled) {
+            setTimeout(speakWord, 500);
+        }
+        if (autoTypeEnabled) {
+            setTimeout(typeWordAutomatically, 650);
+        }
+        input.focus();
+        updateStatus();
+    }
+
+    function handleRoundResult(result) {
+        clearInterval(timerInterval);
+
+        if (result === 'correct') {
+            score += 10;
+            updateScoreDisplay();
+        } else if (result === 'wrong' || result === 'timeout') {
+            lives -= 1;
+            updateStatus();
+        }
+
+        if (lives <= 0) {
+            endGame();
+            return;
+        }
+
+        round += 1;
+        if (round >= maxRounds) {
+            endGame();
+            return;
+        }
+
+        nextWord();
+        startTimer();
+    }
+
+    function launchConfetti() {
+        const colors = ['#ff4d4d', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5', '#ffffff'];
+        const pieces = 90;
+
+        for (let i = 0; i < pieces; i++) {
+            const piece = document.createElement('div');
+            piece.className = 'confetti-piece';
+            piece.style.left = `${Math.random() * 100}vw`;
+            piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+            piece.style.setProperty('--tx', `${(Math.random() - 0.5) * 35}vw`);
+            piece.style.animationDuration = `${2.4 + Math.random() * 1.2}s`;
+            piece.style.animationDelay = `${Math.random() * 0.2}s`;
+            confettiLayer.appendChild(piece);
+        }
+
+        setTimeout(() => {
+            confettiLayer.innerHTML = '';
+        }, 4000);
+    }
+
+    function updateScoreDisplay() {
+        scoreBox.innerText = score;
+        if (signedInUser && score > highScore) {
+            highScore = score;
+            localStorage.setItem(`spellingHighScore_${signedInUser}`, highScore);
+            highBox.innerText = highScore;
+        } else if (!signedInUser) {
+            highBox.innerText = 0;
+        }
+
+        const milestone = Math.floor(score / 1000);
+        if (milestone > confettiMilestone) {
+            confettiMilestone = milestone;
+            launchConfetti();
+        }
+    }
+
+    function checkSpelling() {
+        if (!gameStarted || !currentWord) return;
+
+        const typed = input.value.trim().toLowerCase();
+        if (typed === currentWord.toLowerCase()) {
+            handleRoundResult('correct');
+        } else {
+            if (autoTypeEnabled && currentWord) {
+                input.value = currentWord;
+            }
+            alert("Not quite! Correct spelling: " + currentWord.toUpperCase());
+            handleRoundResult('wrong');
+        }
+    }
+
+    function getHint() {
+        if (!currentWord) return;
+        alert(`INFO: Starts with ${currentWord[0].toUpperCase()}, Ends with ${currentWord.slice(-1).toUpperCase()} (${currentWord.length} letters)`);
+    }
+
+    function resetAndNext() {
+        if (gameStarted) {
+            startGame();
+        } else {
+            nextWord();
+        }
+    }
+
+    input.addEventListener("keypress", (e) => { if (e.key === "Enter") checkSpelling(); });
+</script>
+
+</body>
+</html>
